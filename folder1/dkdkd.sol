@@ -1,6 +1,0 @@
-
-
-contract cnt1{
-
-
-}
