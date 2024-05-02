@@ -12,31 +12,42 @@ import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3MintCallback.so
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
 interface ICurveFi_Exchange {
-    function exchange(int128 i, int128 j, uint256 dx, uint256 min_dy) external returns (uint256);
+    function exchange(
+        int128 i,
+        int128 j,
+        uint256 dx,
+        uint256 min_dy
+    ) external returns (uint256);
 }
 
 contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
     //IUniswapV3Pool public constant poolFirst  = IUniswapV3Pool(0xc0a29BC07DdD7Fb67DbEf0De4F1481f0469be9dD);
 
-    address constant poolAddress_weth_usdc_500 = 0xC31E54c7a869B9FcBEcc14363CF510d1c41fa443;
+    address constant poolAddress_weth_usdc_500 =
+        0xC31E54c7a869B9FcBEcc14363CF510d1c41fa443;
     //token 0 = weth
     //token 1 = usdc
 
-    address constant poolAddress_weth_usdt_500 = 0x641C00A822e8b671738d32a431a4Fb6074E5c79d;
+    address constant poolAddress_weth_usdt_500 =
+        0x641C00A822e8b671738d32a431a4Fb6074E5c79d;
     //token 0 = weth
     //token 1 = usdt
 
-    address constant poolAddress_weth_usdc_3000 = 0x17c14D2c404D167802b16C450d3c99F88F2c4F4d;
+    address constant poolAddress_weth_usdc_3000 =
+        0x17c14D2c404D167802b16C450d3c99F88F2c4F4d;
     //token 0 = weth
     //token 1 = usdc
 
-    address constant poolAddress_weth_usdt_3000 = 0xc82819F72A9e77E2c0c3A69B3196478f44303cf4;
+    address constant poolAddress_weth_usdt_3000 =
+        0xc82819F72A9e77E2c0c3A69B3196478f44303cf4;
     //token 0 = weth
     //token 1 = usdt
 
-    address constant poolAddress_sushi = 0x905dfCD5649217c42684f23958568e533C711Aa3;
+    address constant poolAddress_sushi =
+        0x905dfCD5649217c42684f23958568e533C711Aa3;
 
-    address constant curveTriUsdtUsdcDaiAddress = 0x7f90122BF0700F9E7e1F688fe926940E8839F353;
+    address constant curveTriUsdtUsdcDaiAddress =
+        0x7f90122BF0700F9E7e1F688fe926940E8839F353;
 
     uint256 constant mult1 = 10 ** 29;
     uint256 constant mult2 = 10 ** 19;
@@ -62,25 +73,48 @@ contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
         address token1;
     }
 
-    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata _data) external override {
-        require(amount0Delta > 0 || amount1Delta > 0 || amount0Delta < 0 || amount1Delta < 0, "NoZero"); // swaps entirely within 0-liquidity regions are not supported
+    function uniswapV3SwapCallback(
+        int256 amount0Delta,
+        int256 amount1Delta,
+        bytes calldata _data
+    ) external override {
         require(
-            msg.sender == poolAddress_weth_usdc_500 || msg.sender == poolAddress_weth_usdt_500
-                || msg.sender == poolAddress_weth_usdc_3000 || msg.sender == poolAddress_weth_usdt_3000,
+            amount0Delta > 0 ||
+                amount1Delta > 0 ||
+                amount0Delta < 0 ||
+                amount1Delta < 0,
+            "NoZero"
+        ); // swaps entirely within 0-liquidity regions are not supported
+        require(
+            msg.sender == poolAddress_weth_usdc_500 ||
+                msg.sender == poolAddress_weth_usdt_500 ||
+                msg.sender == poolAddress_weth_usdc_3000 ||
+                msg.sender == poolAddress_weth_usdt_3000,
             "bdsend"
         );
         SwapCallbackData memory data = abi.decode(_data, (SwapCallbackData));
 
         if (amount0Delta > 0) {
-            TransferHelper.safeTransferFrom(data.token0, data.payer, msg.sender, uint256(amount0Delta));
+            TransferHelper.safeTransferFrom(
+                data.token0,
+                data.payer,
+                msg.sender,
+                uint256(amount0Delta)
+            );
         } else if (amount1Delta > 0) {
-            TransferHelper.safeTransferFrom(data.token1, data.payer, msg.sender, uint256(amount1Delta));
+            TransferHelper.safeTransferFrom(
+                data.token1,
+                data.payer,
+                msg.sender,
+                uint256(amount1Delta)
+            );
         }
     }
 
     //Start SushiSwap portion
 
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        // sss
         require((z = x + y) >= x, "ff-math-add-overflow");
     }
 
@@ -92,11 +126,11 @@ contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
         require(y == 0 || (z = x * y) / y == x, "ffss-math-mul-overflow");
     }
 
-    function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut)
-        internal
-        pure
-        returns (uint256 amountOut)
-    {
+    function getAmountOut(
+        uint256 amountIn,
+        uint256 reserveIn,
+        uint256 reserveOut
+    ) internal pure returns (uint256 amountOut) {
         require(amountIn > 0, "ze9w8");
         require(reserveIn > 0 && reserveOut > 0, "z9383");
         uint256 amountInWithFee = mul(amountIn, 997);
@@ -107,11 +141,11 @@ contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
     }
 
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-    function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut)
-        internal
-        pure
-        returns (uint256 amountIn)
-    {
+    function getAmountIn(
+        uint256 amountOut,
+        uint256 reserveIn,
+        uint256 reserveOut
+    ) internal pure returns (uint256 amountIn) {
         require(amountOut > 0, "z2312");
         require(reserveIn > 0 && reserveOut > 0, "zpoijh");
         uint256 numerator = mul(mul(reserveIn, amountOut), 1000);
@@ -122,13 +156,23 @@ contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
     function ETH_USDC_Swap_Sushi(uint256 quant, bool side) public {
         IUniswapV2Pair pairV2 = IUniswapV2Pair(poolAddress_sushi);
 
-        (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast) = pairV2.getReserves();
+        (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast) = pairV2
+            .getReserves();
 
-        uint256 amountIn = side ? getAmountIn(quant, reserve1, reserve0) : quant;
-        uint256 amountOut = side ? quant : getAmountOut(quant, reserve0, reserve1);
+        uint256 amountIn = side
+            ? getAmountIn(quant, reserve1, reserve0)
+            : quant;
+        uint256 amountOut = side
+            ? quant
+            : getAmountOut(quant, reserve0, reserve1);
         address tokenToTransfer = side ? USDC : WETH;
 
-        TransferHelper.safeTransferFrom(tokenToTransfer, msg.sender, poolAddress_sushi, amountIn);
+        TransferHelper.safeTransferFrom(
+            tokenToTransfer,
+            msg.sender,
+            poolAddress_sushi,
+            amountIn
+        );
 
         if (side) {
             pairV2.swap(amountOut, uint256(0), msg.sender, new bytes(0));
@@ -144,7 +188,8 @@ contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
         (int128 i, int128 j) = side ? (1, 0) : (0, 1);
         uint256 dx = quant;
         uint256 min_dy = 0;
-        uint256 amount_received = ICurveFi_Exchange(curveTriUsdtUsdcDaiAddress).exchange(i, j, dx, min_dy);
+        uint256 amount_received = ICurveFi_Exchange(curveTriUsdtUsdcDaiAddress)
+            .exchange(i, j, dx, min_dy);
     }
 
     //End Curve Portion
@@ -168,7 +213,13 @@ contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
         data.token0 = WETH;
         data.token1 = USDC;
 
-        pool.swap(msg.sender, zeroForOne, amount0, sqrtPriceLimitX96, abi.encode(data));
+        pool.swap(
+            msg.sender,
+            zeroForOne,
+            amount0,
+            sqrtPriceLimitX96,
+            abi.encode(data)
+        );
     }
 
     function ETH_USDT_Swap_500(int128 amount0, bool isbuyToken0) public {
@@ -190,7 +241,13 @@ contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
         data.token0 = WETH;
         data.token1 = USDT;
 
-        pool.swap(msg.sender, zeroForOne, amount0, sqrtPriceLimitX96, abi.encode(data));
+        pool.swap(
+            msg.sender,
+            zeroForOne,
+            amount0,
+            sqrtPriceLimitX96,
+            abi.encode(data)
+        );
     }
 
     function ETH_USDC_Swap_3000(int128 amount0, bool isbuyToken0) public {
@@ -212,7 +269,13 @@ contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
         data.token0 = WETH;
         data.token1 = USDC;
 
-        pool.swap(msg.sender, zeroForOne, amount0, sqrtPriceLimitX96, abi.encode(data));
+        pool.swap(
+            msg.sender,
+            zeroForOne,
+            amount0,
+            sqrtPriceLimitX96,
+            abi.encode(data)
+        );
     }
 
     function ETH_USDT_Swap_3000(int128 amount0, bool isbuyToken0) public {
@@ -234,7 +297,13 @@ contract LiquidityManagementArbitrum is IUniswapV3SwapCallback {
         data.token0 = WETH;
         data.token1 = USDT;
 
-        pool.swap(msg.sender, zeroForOne, amount0, sqrtPriceLimitX96, abi.encode(data));
+        pool.swap(
+            msg.sender,
+            zeroForOne,
+            amount0,
+            sqrtPriceLimitX96,
+            abi.encode(data)
+        );
     }
 
     // arb numbers
